@@ -1,5 +1,5 @@
 import anthropic
-from config import CLAUDE_API_KEY, GCHAT_WEBHOOK_URL
+from config import CLAUDE_API_KEY, GCHAT_WEBHOOK_URL, CLAUDE_MODEL, MCP
 from datetime import datetime
 import logging
 import aiohttp
@@ -7,7 +7,23 @@ import aiohttp
 client = anthropic.AsyncAnthropic(api_key=CLAUDE_API_KEY)
 
 
-CLAUDE_RESPONSE_PROMPT = "You are Assistant, useful for answering user queries in a helpful and informative manner. Provide detailed and accurate responses based on the information available to you. If you do not know the answer, admit it honestly rather than attempting to fabricate a response. Always prioritize user safety and adhere to ethical guidelines in your interactions."
+CLAUDE_RESPONSE_PROMPT = """You are an AI assistant that answers user queries using MCP tools.
+
+    Use the available RAG tools to retrieve information related to the user's question.  
+    The currently enabled tools are listed below:
+    Tools Enabled : {mcp_prompt}. Invoke only these tools.
+
+    For every user query:
+    1. Invoke **all tools listed in `tools_enabled`** (e.g., rag_search_video_kb, rag_search_document_kb, rag_search_image_kb) unless the tool is not enabled.  
+    2. Aggregate and synthesize the retrieved results.  
+    3. Base your final answer strictly on this retrieved information. If no relevant information is found, state this clearly.
+
+    [IMPORTANT]: When using video RAG, include the exact timestamps and the corresponding video URL for each referenced segment.
+    Provide responses that are concise, correct, safe, and grounded strictly in retrieved content.
+
+    Format every response in clear, readable Markdown format.
+
+"""
 
 
 def format_chat_history_as_dicts(chat_data):
@@ -38,23 +54,28 @@ def format_chat_history_as_dicts(chat_data):
 
 async def mcp_chat_response_generation(history, custom_mcp_tools):
 
-    # mcp = []
+    mcp = []
 
-    # mcp.append({
-    #     "type":"url",
-    #     "url": "",
-    #     "name": ""
-    # })
+    mcp.append({
+        "type":"url",
+        "url": MCP,
+        "name": "RagMCP"
+    })
+
+    mcp_prompt = "Enabled Knowledge base: " + " ".join(custom_mcp_tools)
+
+    logging.info(f"MCP PROMPT: {mcp_prompt}")
+
     
     try:
         now = datetime.now()
 
         async with client.beta.messages.stream(
-            model="claude-3-5-haiku-20241022",
+            model=CLAUDE_MODEL,
             max_tokens=4096,
             messages=history,
-            system=CLAUDE_RESPONSE_PROMPT,
-            # mcp_servers=mcp,
+            system=CLAUDE_RESPONSE_PROMPT.format(mcp_prompt = mcp_prompt),
+            mcp_servers=mcp,
             betas=["mcp-client-2025-04-04"],
             temperature=0,
             thinking={"type": "disabled"}

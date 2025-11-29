@@ -25,6 +25,7 @@ app = FastAPI(
     redoc_url=f"{API_PREFIX}/redoc",
     docs_url=f"{API_PREFIX}/docs",
     openapi_url=f"{API_PREFIX}/openapi.json",
+    lifespan=mcp_app.lifespan, 
 )
 
 app.mount("/rag/rag-mcp", mcp_app)
