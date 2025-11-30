@@ -56,11 +56,11 @@ async def mcp_chat_response_generation(history, custom_mcp_tools):
 
     mcp = []
 
-    # mcp.append({
-    #     "type":"url",
-    #     "url": MCP,
-    #     "name": "RagMCP"
-    # })
+    mcp.append({
+        "type":"url",
+        "url": MCP,
+        "name": "RagMCP"
+    })
 
     mcp_prompt = "Enabled Knowledge base: " + " ".join(custom_mcp_tools)
 
