@@ -24,7 +24,6 @@ async def claude_chat_response(user_query, tools_enabled, is_new_thread, thread_
     try:
         history = []
         llm_response = ""
-        thread_id = ""
         usage = []
 
 
